@@ -1,0 +1,147 @@
+{
+  "plan_id": "plan_543af85c",
+  "user_id": "user_mslek78c_2xdvsu",
+  "created_at": "2026-08-09T15:03:46.203558",
+  "city": "成都",
+  "travel_days": 1,
+  "preferences": [],
+  "request": {
+    "city": "成都",
+    "start_date": "2026-08-10",
+    "end_date": "2026-08-10",
+    "travel_days": 1,
+    "transportation": "地铁",
+    "accommodation": "经济型酒店",
+    "preferences": [],
+    "free_text_input": "",
+    "user_id": "user_mslek78c_2xdvsu"
+  },
+  "plan": {
+    "city": "成都",
+    "start_date": "2026-08-10",
+    "end_date": "2026-08-10",
+    "days": [
+      {
+        "date": "2026-08-10",
+        "day_index": 0,
+        "description": "第1天：上午游览成都大熊猫繁育研究基地，中午品尝地道川菜，下午参观武侯祠，傍晚逛宽窄巷子并享用火锅晚餐，体验成都慢生活。",
+        "transportation": "地铁",
+        "accommodation": "经济型酒店",
+        "hotel": {
+          "name": "如家酒店(成都华西医大玉林北路地铁站店)",
+          "address": "武侯区玉林北路15号",
+          "location": {
+            "longitude": 104.0447,
+            "latitude": 30.6313
+          },
+          "price_range": "200-300元",
+          "rating": "4.5",
+          "distance": "",
+          "type": "经济型酒店",
+          "estimated_cost": 250
+        },
+        "attractions": [
+          {
+            "name": "成都大熊猫繁育研究基地",
+            "address": "四川省成都市成华区熊猫大道1375号",
+            "location": {
+              "longitude": 104.138176,
+              "latitude": 30.740573
+            },
+            "visit_duration": 180,
+            "description": "大熊猫繁育研究基地，可以近距离观赏大熊猫，了解熊猫保护知识，是成都必打卡的景点。",
+            "category": "动物园",
+            "rating": 4.9,
+            "time_start": "09:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 55
+          },
+          {
+            "name": "成都武侯祠博物馆",
+            "address": "四川省成都市武侯区武侯祠大街231号",
+            "location": {
+              "longitude": 104.0437,
+              "latitude": 30.6458
+            },
+            "visit_duration": 120,
+            "description": "中国唯一的一座君臣合祀祠庙，也是全国影响最大的三国遗迹博物馆，三国文化浓厚。",
+            "category": "博物馆",
+            "rating": 4.6,
+            "time_start": "14:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 50
+          },
+          {
+            "name": "宽窄巷子景区",
+            "address": "四川省成都市青羊区少城街道金河路口宽窄巷子",
+            "location": {
+              "longitude": 104.053307,
+              "latitude": 30.663869
+            },
+            "visit_duration": 150,
+            "description": "成都遗留下来的较成规模的清朝古街道，由宽巷子、窄巷子和井巷子组成，体验成都慢生活的好去处。",
+            "category": "历史文化街区",
+            "rating": 4.8,
+            "time_start": "16:30",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 0
+          }
+        ],
+        "meals": [
+          {
+            "type": "breakfast",
+            "name": "叶婆婆钵钵鸡(太古里店)",
+            "address": "四川省成都市锦江区中纱帽街8号远洋太古里M层",
+            "location": null,
+            "description": null,
+            "time_start": "07:30",
+            "estimated_cost": 30
+          },
+          {
+            "type": "lunch",
+            "name": "陈麻婆豆腐(旗舰店)",
+            "address": "四川省成都市青羊区青华路10号",
+            "location": null,
+            "description": null,
+            "time_start": "12:30",
+            "estimated_cost": 80
+          },
+          {
+            "type": "dinner",
+            "name": "皇城老妈火锅(皇城店)",
+            "address": "四川省成都市青羊区琴台路20号",
+            "location": null,
+            "description": null,
+            "time_start": "18:30",
+            "estimated_cost": 100
+          }
+        ]
+      }
+    ],
+    "weather_info": [
+      {
+        "date": "2026-08-10",
+        "day_weather": "晴",
+        "night_weather": "晴",
+        "day_temp": 35,
+        "night_temp": 24,
+        "wind_direction": "北风",
+        "wind_power": "1-3级"
+      }
+    ],
+    "overall_suggestions": "白天晴朗炎热，紫外线强，请做好防晒措施，出行请携带遮阳帽和墨镜。上午熊猫基地熊猫较活跃，建议尽早前往；中午可适当休息，避开高温时段。推荐使用地铁出行，市区内景点间交通便捷。",
+    "budget": {
+      "total_attractions": 105,
+      "total_hotels": 250,
+      "total_meals": 210,
+      "total_transportation": 20,
+      "total": 585
+    }
+  }
+}

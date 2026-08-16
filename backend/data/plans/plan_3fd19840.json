@@ -1,0 +1,369 @@
+{
+  "plan_id": "plan_3fd19840",
+  "user_id": "user_mslek78c_2xdvsu",
+  "created_at": "2026-08-09T21:28:03.093511",
+  "city": "重庆",
+  "travel_days": 3,
+  "preferences": [],
+  "request": {
+    "city": "重庆",
+    "start_date": "2026-08-10",
+    "end_date": "2026-08-12",
+    "travel_days": 3,
+    "transportation": "地铁",
+    "accommodation": "经济型酒店",
+    "preferences": [],
+    "free_text_input": "",
+    "user_id": "user_mslek78c_2xdvsu"
+  },
+  "plan": {
+    "city": "重庆",
+    "start_date": "2026-08-10",
+    "end_date": "2026-08-12",
+    "days": [
+      {
+        "date": "2026-08-10",
+        "day_index": 0,
+        "description": "渝中区经典地标一日游：上午解放碑感受城市心脏，体验长江索道跨江观光，傍晚到洪崖洞欣赏吊脚楼与江畔夜景。",
+        "transportation": "地铁",
+        "accommodation": "经济型酒店",
+        "hotel": {
+          "name": "锦江之星（重庆解放碑店）",
+          "address": "重庆市渝中区八一路177号",
+          "location": {
+            "longitude": 106.572,
+            "latitude": 29.556
+          },
+          "price_range": "250-350元",
+          "rating": "4.3",
+          "distance": "",
+          "type": "经济型酒店",
+          "estimated_cost": 300
+        },
+        "attractions": [
+          {
+            "name": "解放碑",
+            "address": "重庆市渝中区民族路177号",
+            "location": {
+              "longitude": 106.575,
+              "latitude": 29.557
+            },
+            "visit_duration": 60,
+            "description": "重庆地标性建筑与商业中心，四周环绕购物广场，是感受重庆城市繁华的起点。",
+            "category": "城市地标",
+            "rating": 4.6,
+            "time_start": "09:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 0
+          },
+          {
+            "name": "长江索道",
+            "address": "重庆市渝中区新华路153号",
+            "location": {
+              "longitude": 106.584,
+              "latitude": 29.558
+            },
+            "visit_duration": 40,
+            "description": "跨越长江的空中巴士，连接渝中与南岸，俯瞰两江交汇与山城立体风貌。",
+            "category": "交通观光",
+            "rating": 4.5,
+            "time_start": "11:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 20
+          },
+          {
+            "name": "洪崖洞",
+            "address": "重庆市渝中区嘉滨路88号",
+            "location": {
+              "longitude": 106.579,
+              "latitude": 29.562
+            },
+            "visit_duration": 120,
+            "description": "依山而建的吊脚楼建筑群，融合民俗风情街与江景餐厅，夜晚灯火辉煌如梦幻之城。",
+            "category": "历史街区/夜景",
+            "rating": 4.7,
+            "time_start": "15:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 0
+          }
+        ],
+        "meals": [
+          {
+            "type": "breakfast",
+            "name": "秦云老太婆摊摊面（解放碑店）",
+            "address": "重庆市渝中区八一路27号",
+            "location": null,
+            "description": null,
+            "time_start": "07:30",
+            "estimated_cost": 30
+          },
+          {
+            "type": "lunch",
+            "name": "珮姐老火锅（较场口店）",
+            "address": "重庆市渝中区民生路4号",
+            "location": null,
+            "description": null,
+            "time_start": "12:00",
+            "estimated_cost": 100
+          },
+          {
+            "type": "dinner",
+            "name": "小天鹅火锅（洪崖洞店）",
+            "address": "重庆市渝中区嘉滨路88号洪崖洞4楼",
+            "location": null,
+            "description": null,
+            "time_start": "18:30",
+            "estimated_cost": 120
+          }
+        ]
+      },
+      {
+        "date": "2026-08-11",
+        "day_index": 1,
+        "description": "沙坪坝历史文化一日游：上午逛磁器口古镇，午后探访渣滓洞、白公馆，铭记红色记忆。",
+        "transportation": "地铁",
+        "accommodation": "经济型酒店",
+        "hotel": {
+          "name": "格林豪泰（重庆沙坪坝磁器口店）",
+          "address": "重庆市沙坪坝区童家桥正街127号",
+          "location": {
+            "longitude": 106.447,
+            "latitude": 29.586
+          },
+          "price_range": "200-300元",
+          "rating": "4.2",
+          "distance": "",
+          "type": "经济型酒店",
+          "estimated_cost": 280
+        },
+        "attractions": [
+          {
+            "name": "磁器口古镇",
+            "address": "重庆市沙坪坝区磁器口正街78号",
+            "location": {
+              "longitude": 106.443,
+              "latitude": 29.582
+            },
+            "visit_duration": 180,
+            "description": "千年古镇，青石板路与明清建筑并存，遍布特色小吃、手工艺品和茶馆，充满市井烟火气。",
+            "category": "古镇老街",
+            "rating": 4.5,
+            "time_start": "09:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 0
+          },
+          {
+            "name": "渣滓洞",
+            "address": "重庆市沙坪坝区歌乐山烈士陵园内",
+            "location": {
+              "longitude": 106.394,
+              "latitude": 29.56
+            },
+            "visit_duration": 60,
+            "description": "原为煤矿，后成为关押革命者的监狱，现为爱国主义教育遗址，铭记历史的重要场所。",
+            "category": "红色旅游",
+            "rating": 4.4,
+            "time_start": "14:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 0
+          },
+          {
+            "name": "白公馆",
+            "address": "重庆市沙坪坝区歌乐山松林坡",
+            "location": {
+              "longitude": 106.431,
+              "latitude": 29.559
+            },
+            "visit_duration": 60,
+            "description": "原为国民党军统局监狱，关押过许多革命志士，现为革命传统教育基地。",
+            "category": "红色旅游",
+            "rating": 4.4,
+            "time_start": "15:30",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 0
+          }
+        ],
+        "meals": [
+          {
+            "type": "breakfast",
+            "name": "磁器口张氏牛肉面",
+            "address": "重庆市沙坪坝区磁器口正街45号",
+            "location": null,
+            "description": null,
+            "time_start": "08:00",
+            "estimated_cost": 30
+          },
+          {
+            "type": "lunch",
+            "name": "茂庄古镇鸡杂（磁器口店）",
+            "address": "重庆市沙坪坝区磁器口正街69号",
+            "location": null,
+            "description": null,
+            "time_start": "12:00",
+            "estimated_cost": 50
+          },
+          {
+            "type": "dinner",
+            "name": "沈姐万州烤鱼（沙坪坝店）",
+            "address": "重庆市沙坪坝区渝碚路66号",
+            "location": null,
+            "description": null,
+            "time_start": "18:30",
+            "estimated_cost": 80
+          }
+        ]
+      },
+      {
+        "date": "2026-08-12",
+        "day_index": 2,
+        "description": "沿地铁2号线体验立体重庆：上午湖广会馆品移民文化，中午看李子坝轻轨穿楼，下午逛重庆动物园。",
+        "transportation": "地铁",
+        "accommodation": "经济型酒店",
+        "hotel": {
+          "name": "如家酒店（重庆杨家坪动物园店）",
+          "address": "重庆市九龙坡区西郊路24号",
+          "location": {
+            "longitude": 106.508,
+            "latitude": 29.506
+          },
+          "price_range": "200-320元",
+          "rating": "4.4",
+          "distance": "",
+          "type": "经济型酒店",
+          "estimated_cost": 300
+        },
+        "attractions": [
+          {
+            "name": "湖广会馆",
+            "address": "重庆市渝中区长滨路芭蕉园1号",
+            "location": {
+              "longitude": 106.587,
+              "latitude": 29.556
+            },
+            "visit_duration": 90,
+            "description": "清代古建筑群，系湖广填四川移民文化的见证，雕梁画栋、依山而建，充满历史韵味。",
+            "category": "历史文化",
+            "rating": 4.5,
+            "time_start": "09:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 30
+          },
+          {
+            "name": "李子坝轻轨站",
+            "address": "重庆市渝中区李子坝正街62号",
+            "location": {
+              "longitude": 106.539,
+              "latitude": 29.545
+            },
+            "visit_duration": 45,
+            "description": "轨道2号线穿楼而过的网红打卡点，列车从居民楼中穿过，是重庆魔幻交通的代表场景。",
+            "category": "城市景观",
+            "rating": 4.6,
+            "time_start": "11:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 0
+          },
+          {
+            "name": "重庆动物园",
+            "address": "重庆市九龙坡区杨家坪西郊一村1号",
+            "location": {
+              "longitude": 106.497,
+              "latitude": 29.502
+            },
+            "visit_duration": 120,
+            "description": "川渝地区知名动物园，拥有大熊猫、华南虎等多种珍稀动物，适合亲子与休闲游览。",
+            "category": "动物园",
+            "rating": 4.4,
+            "time_start": "14:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 25
+          }
+        ],
+        "meals": [
+          {
+            "type": "breakfast",
+            "name": "无名缘肉沫米粉（杨家坪店）",
+            "address": "重庆市九龙坡区杨家坪正街8号",
+            "location": null,
+            "description": null,
+            "time_start": "07:30",
+            "estimated_cost": 30
+          },
+          {
+            "type": "lunch",
+            "name": "李子坝梁山鸡（李子坝店）",
+            "address": "重庆市渝中区李子坝正街60号",
+            "location": null,
+            "description": null,
+            "time_start": "12:00",
+            "estimated_cost": 70
+          },
+          {
+            "type": "dinner",
+            "name": "余姐毛血旺（解放碑店）",
+            "address": "重庆市渝中区中华路15号",
+            "location": null,
+            "description": null,
+            "time_start": "18:00",
+            "estimated_cost": 60
+          }
+        ]
+      }
+    ],
+    "weather_info": [
+      {
+        "date": "2026-08-10",
+        "day_weather": "多云",
+        "night_weather": "晴",
+        "day_temp": 34,
+        "night_temp": 27,
+        "wind_direction": "东北风",
+        "wind_power": "1-3级"
+      },
+      {
+        "date": "2026-08-11",
+        "day_weather": "多云",
+        "night_weather": "多云",
+        "day_temp": 38,
+        "night_temp": 28,
+        "wind_direction": "西北风",
+        "wind_power": "1-3级"
+      },
+      {
+        "date": "2026-08-12",
+        "day_weather": "晴",
+        "night_weather": "晴",
+        "day_temp": 38,
+        "night_temp": 28,
+        "wind_direction": "西北风",
+        "wind_power": "1-3级"
+      }
+    ],
+    "overall_suggestions": "重庆夏季酷热，白天最高气温可达38℃，务必做好防暑准备：随身携带饮用水、防晒霜、遮阳伞，尽量避开正午烈日时段长时间步行。全程推荐地铁出行，舒适且能体验山城立体交通；洪崖洞、长江索道等热门点建议提前通过官方渠道预约购票。饮食以麻辣为主，可搭配冰粉、凉虾等解辣甜品。行程节奏已适当放慢，注意及时休息。",
+    "budget": {
+      "total_attractions": 75,
+      "total_hotels": 880,
+      "total_meals": 570,
+      "total_transportation": 60,
+      "total": 1585
+    }
+  }
+}

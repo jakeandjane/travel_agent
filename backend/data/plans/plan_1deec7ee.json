@@ -1,0 +1,147 @@
+{
+  "plan_id": "plan_1deec7ee",
+  "user_id": "user_mslek78c_2xdvsu",
+  "created_at": "2026-08-09T16:09:44.060228",
+  "city": "成都",
+  "travel_days": 1,
+  "preferences": [],
+  "request": {
+    "city": "成都",
+    "start_date": "2026-08-10",
+    "end_date": "2026-08-10",
+    "travel_days": 1,
+    "transportation": "地铁",
+    "accommodation": "经济型酒店",
+    "preferences": [],
+    "free_text_input": "",
+    "user_id": "user_mslek78c_2xdvsu"
+  },
+  "plan": {
+    "city": "成都",
+    "start_date": "2026-08-10",
+    "end_date": "2026-08-10",
+    "days": [
+      {
+        "date": "2026-08-10",
+        "day_index": 0,
+        "description": "第1天：从文殊院的禅意古韵，到宽窄巷子的市井烟火，再到武侯祠的三国遗韵，一天之内感受成都的历史文化与慢生活。",
+        "transportation": "地铁（1号线文殊院站→4号线宽窄巷子站→3号线武侯祠站/高升桥站）+步行",
+        "accommodation": "经济型酒店",
+        "hotel": {
+          "name": "如家酒店(成都华西医大玉林北路地铁站店)",
+          "address": "成都市武侯区玉林北路3号附7号",
+          "location": {
+            "longitude": 104.0608,
+            "latitude": 30.6309
+          },
+          "price_range": "240-360元",
+          "rating": "4.3",
+          "distance": "",
+          "type": "经济型酒店",
+          "estimated_cost": 280
+        },
+        "attractions": [
+          {
+            "name": "文殊院",
+            "address": "成都市青羊区文殊院街66号",
+            "location": {
+              "longitude": 104.0715,
+              "latitude": 30.6773
+            },
+            "visit_duration": 90,
+            "description": "始建于隋朝的古刹，川西著名佛教寺院，院内古木参天、环境清幽，保存大量珍贵文物和书画，是感受成都禅意慢生活的好去处。",
+            "category": "寺庙古迹",
+            "rating": 4.6,
+            "time_start": "09:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 0
+          },
+          {
+            "name": "宽窄巷子景区",
+            "address": "成都市青羊区长顺上街127号",
+            "location": {
+              "longitude": 104.0563,
+              "latitude": 30.6688
+            },
+            "visit_duration": 120,
+            "description": "由宽巷子、窄巷子和井巷子组成的历史文化街区，是成都老城风貌和市井文化的缩影，茶铺、小吃、文创店铺云集。",
+            "category": "历史文化街区",
+            "rating": 4.5,
+            "time_start": "13:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 0
+          },
+          {
+            "name": "成都武侯祠博物馆",
+            "address": "成都市武侯区武侯祠大街231号",
+            "location": {
+              "longitude": 104.0486,
+              "latitude": 30.6455
+            },
+            "visit_duration": 120,
+            "description": "全国唯一一座君臣合祀祠庙，也是三国文化的重要地标，红墙竹影间可感受诸葛亮与刘备的历史故事，与锦里相邻。",
+            "category": "历史博物馆",
+            "rating": 4.7,
+            "time_start": "15:00",
+            "photos": [],
+            "poi_id": "",
+            "image_url": null,
+            "ticket_price": 50
+          }
+        ],
+        "meals": [
+          {
+            "type": "breakfast",
+            "name": "洞子口张老二凉粉(文殊院店)",
+            "address": "成都市青羊区文殊院街39号",
+            "location": null,
+            "description": null,
+            "time_start": "08:00",
+            "estimated_cost": 20
+          },
+          {
+            "type": "lunch",
+            "name": "冒椒火辣(奎星楼街店)",
+            "address": "成都市青羊区奎星楼街33号",
+            "location": null,
+            "description": null,
+            "time_start": "11:30",
+            "estimated_cost": 80
+          },
+          {
+            "type": "dinner",
+            "name": "蜀九香火锅(玉林店)",
+            "address": "成都市武侯区玉林西路96号",
+            "location": null,
+            "description": null,
+            "time_start": "18:00",
+            "estimated_cost": 120
+          }
+        ]
+      }
+    ],
+    "weather_info": [
+      {
+        "date": "2026-08-10",
+        "day_weather": "晴",
+        "night_weather": "晴",
+        "day_temp": 35,
+        "night_temp": 24,
+        "wind_direction": "北风",
+        "wind_power": "1-3级"
+      }
+    ],
+    "overall_suggestions": "成都8月白天炎热，最高气温35℃左右，请穿着透气衣物、佩戴遮阳帽，并随身携带充足饮用水。地铁出行建议提前下载天府通或使用支付宝乘车码。文殊院免费开放，游览时请保持安静；武侯祠门票可提前线上购买，减少排队时间。午餐在奎星楼街、晚餐在玉林附近均可体验地道成都风味，点餐时可选择微辣或中辣，注意肠胃适应。",
+    "budget": {
+      "total_attractions": 50,
+      "total_hotels": 280,
+      "total_meals": 220,
+      "total_transportation": 30,
+      "total": 580
+    }
+  }
+}

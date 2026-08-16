@@ -1,0 +1,12 @@
+{
+  "user_id": "test_user_1",
+  "dietary_restrictions": [],
+  "travel_style": [],
+  "budget_level": "适中",
+  "visited_cities": [
+    "??",
+    "北京"
+  ],
+  "preferred_activities": [],
+  "accommodation_preference": ""
+}
