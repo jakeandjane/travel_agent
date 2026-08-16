@@ -35,11 +35,18 @@
 - **校验**: Pydantic 全链路 Schema 校验
 
 ### 前端
+
 - **框架**: Vue 3 + TypeScript + Vite
 - **UI**: Ant Design Vue
 - **地图**: 高德地图 JS API 2.0（动态中心 + POI 标记 + 路线）
 - **流式**: fetch + ReadableStream 消费 SSE
 - **导出**: html2canvas + jsPDF
+
+
+
+## 特性文档网页：
+
+https://jakeandjane.github.io/travel_agent/
 
 ## 📁 项目结构
 
