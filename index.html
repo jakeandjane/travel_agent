@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>特性设计文档 · 智能旅行助手 Agent 系统</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>">
+<style>
+/* ============ Design tokens ============ */
+:root {
+  --bg: #f3f5fa;
+  --surface: #ffffff;
+  --surface-2: #eceff7;
+  --ink: #1d2437;
+  --ink-2: #4a5468;
+  --ink-3: #7b8499;
+  --line: #dfe4ef;
+  --accent: #667eea;
+  --accent-2: #764ba2;
+  --accent-soft: #eef0fd;
+  --accent-text: #4a56c9;
+  --ok: #2e8f57;
+  --ok-bg: #e7f4ec;
+  --warn: #a9741d;
+  --warn-bg: #fbf3e0;
+  --crit: #c33c3c;
+  --crit-bg: #fbe9e9;
+  --info: #2b6cb0;
+  --info-bg: #e8f0f9;
+  --grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131722;
+    --surface: #1b2130;
+    --surface-2: #222940;
+    --ink: #e9ecf5;
+    --ink-2: #a9b2c8;
+    --ink-3: #7d87a0;
+    --line: #2d3548;
+    --accent: #8b9bf5;
+    --accent-2: #ab8edc;
+    --accent-soft: #262d45;
+    --accent-text: #9dabf8;
+    --ok: #5cbd85;
+    --ok-bg: #1e2f27;
+    --warn: #d8a54b;
+    --warn-bg: #322a1a;
+    --crit: #e47171;
+    --crit-bg: #37221f;
+    --info: #6fa9e4;
+    --info-bg: #1e2b3d;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131722;
+  --surface: #1b2130;
+  --surface-2: #222940;
+  --ink: #e9ecf5;
+  --ink-2: #a9b2c8;
+  --ink-3: #7d87a0;
+  --line: #2d3548;
+  --accent: #8b9bf5;
+  --accent-2: #ab8edc;
+  --accent-soft: #262d45;
+  --accent-text: #9dabf8;
+  --ok: #5cbd85;
+  --ok-bg: #1e2f27;
+  --warn: #d8a54b;
+  --warn-bg: #322a1a;
+  --crit: #e47171;
+  --crit-bg: #37221f;
+  --info: #6fa9e4;
+  --info-bg: #1e2b3d;
+}
+
+/* ============ Base ============ */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 15px;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent-text); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+  font-size: 0.86em;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* ============ Top bar ============ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+  max-width: 1180px; margin: 0 auto; padding: 9px 24px;
+  display: flex; align-items: center; gap: 16px;
+  font-size: 12.5px; color: var(--ink-3);
+}
+.docno {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  color: var(--accent-text);
+  font-weight: 600; letter-spacing: .04em;
+}
+.topbar .spacer { flex: 1; }
+.status-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--ok-bg); color: var(--ok);
+  padding: 2px 10px; border-radius: 999px; font-weight: 600; font-size: 12px;
+}
+.status-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ============ Document header ============ */
+.dochead {
+  max-width: 1180px; margin: 0 auto; padding: 48px 24px 8px;
+}
+.eyebrow {
+  margin: 0 0 10px; font-size: 12px; letter-spacing: .14em;
+  color: var(--accent-text); font-weight: 600;
+}
+.dochead h1 {
+  margin: 0; font-size: 33px; line-height: 1.3; letter-spacing: .01em;
+  font-weight: 700; text-wrap: balance;
+}
+.dochead h1 em {
+  font-style: normal; font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-size: .82em; color: var(--accent-text);
+}
+.subtitle {
+  margin: 12px 0 0; max-width: 640px; color: var(--ink-2); font-size: 15px;
+}
+.metrics {
+  margin-top: 30px; padding: 26px 28px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+  box-shadow: 0 6px 24px rgba(29, 36, 55, .06);
+  position: relative; overflow: hidden;
+}
+.metrics::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--grad);
+}
+.metric { text-align: center; padding: 4px 8px; }
+.metric + .metric { border-left: 1px solid var(--line); }
+.metric .m-label {
+  font-size: 12px; letter-spacing: .08em; color: var(--ink-3); margin-bottom: 6px;
+}
+.metric .m-value {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--ink); letter-spacing: -.02em;
+}
+.metric .m-note { font-size: 11.5px; color: var(--ink-3); margin-top: 4px; }
+.metrics-note {
+  margin: 10px 2px 0; font-size: 12px; color: var(--ink-3);
+}
+
+/* ============ Layout ============ */
+.layout {
+  max-width: 1180px; margin: 0 auto; padding: 30px 24px 60px;
+  display: grid; grid-template-columns: 224px minmax(0, 1fr); gap: 40px;
+  align-items: start;
+}
+.toc { position: sticky; top: 62px; }
+.toc-title {
+  font-size: 12px; letter-spacing: .12em; color: var(--ink-3);
+  margin: 0 0 10px 2px; font-weight: 600;
+}
+.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.toc a {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 5px 10px; border-radius: 7px; color: var(--ink-2);
+  font-size: 13.5px; text-decoration: none;
+  border-left: 2px solid transparent;
+}
+.toc a .t-num {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 11.5px; color: var(--ink-3); min-width: 18px;
+}
+.toc a:hover { background: var(--surface-2); }
+.toc a.active {
+  color: var(--accent-text); background: var(--accent-soft);
+  border-left-color: var(--accent); font-weight: 600;
+}
+.toc a.active .t-num { color: var(--accent-text); }
+
+/* ============ Main content ============ */
+main { min-width: 0; }
+section { margin-bottom: 52px; scroll-margin-top: 70px; }
+.ch-head {
+  display: flex; align-items: baseline; gap: 14px;
+  padding-bottom: 10px; margin-bottom: 22px;
+  border-bottom: 2px solid var(--line);
+}
+.ch-num {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 15px; font-weight: 700; color: var(--accent-text);
+  background: var(--accent-soft); border-radius: 6px; padding: 2px 9px;
+}
+.ch-head h2 {
+  margin: 0; font-size: 22px; font-weight: 700; letter-spacing: .01em;
+  text-wrap: balance;
+}
+h3 { font-size: 17px; font-weight: 700; margin: 30px 0 14px; }
+h4 { font-size: 15px; font-weight: 700; margin: 22px 0 10px; color: var(--ink-2); }
+p { margin: 0 0 14px; }
+main li { margin-bottom: 6px; }
+strong { font-weight: 600; }
+
+/* ============ Tables ============ */
+.table-wrap {
+  overflow-x: auto; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); margin: 16px 0 22px;
+  box-shadow: 0 2px 10px rgba(29, 36, 55, .04);
+}
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td {
+  padding: 9px 13px; text-align: left; vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+tbody tr:last-child td { border-bottom: none; }
+thead th {
+  background: var(--surface-2); font-weight: 600; font-size: 13px;
+  color: var(--ink-2); letter-spacing: .02em; white-space: nowrap;
+  border-bottom: 2px solid var(--line);
+}
+tbody tr:hover { background: var(--surface-2); }
+td code, th code { white-space: nowrap; }
+
+/* chips */
+.chip {
+  display: inline-block; padding: 0 8px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 700; line-height: 20px; letter-spacing: .02em;
+}
+.chip-p0 { background: var(--crit-bg); color: var(--crit); }
+.chip-p1 { background: var(--warn-bg); color: var(--warn); }
+.chip-p2 { background: var(--surface-2); color: var(--ink-3); }
+.chip-high { background: var(--crit-bg); color: var(--crit); }
+.chip-mid { background: var(--warn-bg); color: var(--warn); }
+.chip-low { background: var(--ok-bg); color: var(--ok); }
+
+/* callout */
+.callout {
+  background: var(--accent-soft); border-left: 3px solid var(--accent);
+  padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0 22px;
+  font-size: 13.5px;
+}
+.callout .c-title { font-weight: 700; color: var(--accent-text); margin-right: 8px; }
+
+/* ============ Diagrams ============ */
+.diagram-card {
+  background: #ffffff; border: 1px solid #d8dde9; border-radius: 10px;
+  padding: 18px; margin: 16px 0 22px; overflow-x: auto;
+  box-shadow: 0 2px 10px rgba(29, 36, 55, .05);
+}
+.diagram-card figcaption {
+  font-size: 12px; color: #6b7280; text-align: center; padding-top: 10px;
+  letter-spacing: .04em;
+}
+.diagram-card pre.mermaid { margin: 0; background: transparent; }
+
+/* ============ Appendix tree ============ */
+.filetree {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 18px 22px; margin: 16px 0 22px;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 12.5px; line-height: 1.9; overflow-x: auto;
+  box-shadow: 0 2px 10px rgba(29, 36, 55, .04);
+}
+.filetree .cmt { color: var(--ink-3); }
+
+/* ============ Footer ============ */
+.doc-footer {
+  border-top: 1px solid var(--line); margin-top: 70px; padding-top: 18px;
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  font-size: 12px; color: var(--ink-3);
+}
+.doc-footer code { font-size: 11px; }
+
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc { position: static; }
+  .toc ol { flex-direction: row; flex-wrap: wrap; }
+  .metrics { grid-template-columns: repeat(2, 1fr); row-gap: 18px; }
+  .metric:nth-child(3) { border-left: none; }
+  .dochead h1 { font-size: 27px; }
+}
+@media (max-width: 560px) {
+  .metrics { grid-template-columns: 1fr; }
+  .metric + .metric { border-left: none; border-top: 1px solid var(--line); padding-top: 12px; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <span class="docno">FEATURE-DESIGN-TA-001</span>
+    <span>V1.0 · 2026-08-16</span>
+    <span class="spacer"></span>
+    <span>编制：研发工程师（特性 SE）</span>
+    <span class="status-chip">评审通过 TR1 / TR2 / TR3</span>
+  </div>
+</header>
+
+<header class="dochead">
+  <p class="eyebrow">特性设计文档 · FEATURE DESIGN DOCUMENT</p>
+  <h1>智能旅行助手 <em>Agent</em> 系统</h1>
+  <p class="subtitle">多 Agent 并行旅行规划特性：覆盖需求分析、总体方案、接口设计、数据结构、DFX、测试策略、Story 拆分与风险依赖的全量设计。核心链路仅需两个 API Key 即可部署。</p>
+
+  <div class="metrics" aria-label="关键设计目标">
+    <div class="metric">
+      <div class="m-label">查询阶段</div>
+      <div class="m-value">≤ 15s</div>
+      <div class="m-note">4 路并行 · 串行基线约 60s</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">规划成功率</div>
+      <div class="m-value">≥ 95%</div>
+      <div class="m-note">解析重试 + Schema 校验</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">工具可用性</div>
+      <div class="m-value">7 / 7</div>
+      <div class="m-note">高德 7 个子工具</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">工具初始化</div>
+      <div class="m-value">≤ 0.5s</div>
+      <div class="m-note">直连 HTTP · 无子进程</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">静默失败</div>
+      <div class="m-value">0</div>
+      <div class="m-note">分层显式报错 · 禁假数据</div>
+    </div>
+  </div>
+  <p class="metrics-note">上表为设计目标，测量口径见「07 测试策略 · 性能指标测试」。</p>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="文档目录">
+    <p class="toc-title">目录</p>
+    <ol>
+      <li><a href="#ch-review"><span class="t-num">—</span>评审记录</a></li>
+      <li><a href="#ch1"><span class="t-num">01</span>概述</a></li>
+      <li><a href="#ch2"><span class="t-num">02</span>需求分析</a></li>
+      <li><a href="#ch3"><span class="t-num">03</span>总体方案设计</a></li>
+      <li><a href="#ch4"><span class="t-num">04</span>接口设计</a></li>
+      <li><a href="#ch5"><span class="t-num">05</span>数据结构设计</a></li>
+      <li><a href="#ch6"><span class="t-num">06</span>DFX 设计</a></li>
+      <li><a href="#ch7"><span class="t-num">07</span>测试策略</a></li>
+      <li><a href="#ch8"><span class="t-num">08</span>Story 拆分与交付</a></li>
+      <li><a href="#ch9"><span class="t-num">09</span>风险与依赖</a></li>
+      <li><a href="#ch-a"><span class="t-num">附</span>代码结构对照</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="ch-review">
+      <div class="ch-head"><span class="ch-num">评审</span><h2>评审记录</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>评审点</th><th>评审内容</th><th>结论</th><th>遗留问题</th></tr></thead>
+          <tbody>
+            <tr><td>TR1 需求评审</td><td>用户故事、FR/NFR 清单、验收准则</td><td>通过</td><td>海外城市暂不支持（高德数据覆盖限制，见范围声明）</td></tr>
+            <tr><td>TR2 总体方案评审</td><td>五层架构、关键设计决策、接口与数据结构、DFX 设计</td><td>通过</td><td>单轮微调限制、JSON 存储演进方案见第 09 章</td></tr>
+            <tr><td>TR3 测试方案评审</td><td>测试分层、AT 用例、性能指标口径、故障注入方案</td><td>通过</td><td>pytest 自动化补齐计划见 07.5 节</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="ch1">
+      <div class="ch-head"><span class="ch-num">01</span><h2>概述</h2></div>
+      <h3>1.1 特性背景与痛点</h3>
+      <p>用户规划一次多日旅行，通常需要在多个 App 间反复切换（查景点、查天气、订酒店、找餐厅），再手动拼装成行程，耗时以小时计。若直接使用通用大语言模型生成行程，存在三类系统性缺陷：</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>痛点</th><th>表现</th><th>根因</th></tr></thead>
+          <tbody>
+            <tr><td><strong>幻觉严重</strong></td><td>编造不存在的景点、餐厅、票价、营业状态</td><td>模型无实时数据源，靠训练记忆补全</td></tr>
+            <tr><td><strong>工具调用不可靠</strong></td><td>模型把工具调用当普通文本输出，工具从未真正执行</td><td>非原生工具调用协议，靠文本约定"碰运气"</td></tr>
+            <tr><td><strong>体验不可信</strong></td><td>生成过程黑盒等待 60s+、失败时静默返回编造数据</td><td>无真实进度反馈、无显式失败机制</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>1.2 特性价值</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>价值点</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>数据真实</td><td>景点/天气/酒店/餐厅全部来自高德真实数据，每项可验证</td></tr>
+            <tr><td>响应快速</td><td>4 路并行搜索将查询阶段从约 60s 压缩至 15s 量级</td></tr>
+            <tr><td>过程可信</td><td>SSE 真实进度事件驱动前端展示，失败显式分层报错，杜绝"假进度、假数据"</td></tr>
+            <tr><td>结果可控</td><td>支持 AI 微调（只改用户要求的部分）、手动编辑、历史回溯、图片/PDF 导出</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>1.3 特性范围</h3>
+      <p><strong>范围内</strong>：中国大陆城市的多日旅行计划生成与微调（依赖高德数据覆盖）；Web 端全流程。</p>
+      <p><strong>范围外</strong>：酒店/门票预订与支付、账号体系（本期以 user_id 标识，无鉴权）、移动端 App、海外城市、多语言。</p>
+      <h3>1.4 约束条件</h3>
+      <ol>
+        <li>外部服务仅依赖三项：DeepSeek 大模型 API、高德开放平台 API、Unsplash 图片搜索（可选，不可用时前端降级）。</li>
+        <li>核心链路部署仅需两个 API Key（高德 + DeepSeek），配置全部外置于 <code>.env</code>，代码中不硬编码密钥。</li>
+        <li>技术栈既定：后端 Python/FastAPI + HelloAgents 框架，前端 Vue 3 + TypeScript + Ant Design Vue + Vite。</li>
+        <li>单机单进程部署形态（本期不做分布式）。</li>
+      </ol>
+    </section>
+
+    <section id="ch2">
+      <div class="ch-head"><span class="ch-num">02</span><h2>需求分析</h2></div>
+      <h3>2.1 用户故事（INVEST）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>编号</th><th>用户故事</th><th>价值</th><th>独立性</th><th>可测试性</th></tr></thead>
+          <tbody>
+            <tr><td>US1</td><td>作为旅行者，我输入目的地、日期、偏好，就能得到一份含时间安排、三餐、酒店、天气、预算的完整计划</td><td>核心价值</td><td>独立</td><td>生成计划 JSON 通过 Schema 校验且数据可溯源</td></tr>
+            <tr><td>US2</td><td>作为用户，我在等待生成时，能看到真实的阶段进度，而不是干等或假进度条</td><td>体验价值</td><td>独立</td><td>SSE 事件序列与后端实际阶段一一对应</td></tr>
+            <tr><td>US3</td><td>作为用户，我对计划某处不满意时，能用自然语言微调，且未被要求修改的部分保持不变</td><td>高价值</td><td>独立</td><td>对比修改前后计划，未涉及部分逐字段一致</td></tr>
+            <tr><td>US4</td><td>作为用户，我能回看历史生成的所有计划</td><td>留存价值</td><td>独立</td><td>历史列表按时间倒序，可打开任意一条</td></tr>
+            <tr><td>US5</td><td>作为用户，我能把计划导出为图片或 PDF 带走</td><td>留存价值</td><td>独立</td><td>导出文件内容完整、可打开</td></tr>
+            <tr><td>US6</td><td>作为回头客，系统记得我的偏好（饮食禁忌/预算/已去城市），再次规划更贴合</td><td>个性化价值</td><td>独立</td><td>二次规划请求中注入画像信息</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>2.2 功能需求清单（FR）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>编号</th><th>功能需求</th><th>优先级</th><th>关联故事</th></tr></thead>
+          <tbody>
+            <tr><td>FR1</td><td>旅行需求采集：目的地、起止日期、天数自动计算（上限 30 天，结束日期不得早于开始日期）、交通方式、住宿偏好、兴趣偏好标签、自由文本补充</td><td><span class="chip chip-p0">P0</span></td><td>US1</td></tr>
+            <tr><td>FR2</td><td>多维并行搜索：景点、天气、酒店、餐厅 4 路 Agent 并行调用高德 API</td><td><span class="chip chip-p0">P0</span></td><td>US1</td></tr>
+            <tr><td>FR3</td><td>结构化行程规划：每天景点及开始时间（HH:MM）/游览时长、三餐及时间、酒店推荐、景点间交通方式、逐日天气、分项预算、总体建议</td><td><span class="chip chip-p0">P0</span></td><td>US1</td></tr>
+            <tr><td>FR4</td><td>实时进度反馈：SSE 推送 4 类事件（查询开始/查询完成/规划开始/规划完成）驱动前端三步进度指示</td><td><span class="chip chip-p0">P0</span></td><td>US2</td></tr>
+            <tr><td>FR5</td><td>计划持久化与历史回溯：生成计划落盘并分配 plan_id，按用户查询历史列表与详情</td><td><span class="chip chip-p1">P1</span></td><td>US4</td></tr>
+            <tr><td>FR6</td><td>相似历史计划参考：新规划时检索同用户相似计划，注入其结构作为生成参考（不复制数据）</td><td><span class="chip chip-p1">P1</span></td><td>US1</td></tr>
+            <tr><td>FR7</td><td>用户偏好画像：持久化用户画像并在规划提示词中注入</td><td><span class="chip chip-p1">P1</span></td><td>US6</td></tr>
+            <tr><td>FR8</td><td>两阶段 AI 微调：快速建议（纯 LLM）→ 用户确认 → 完整修改（工具调用），仅修改用户要求的部分</td><td><span class="chip chip-p1">P1</span></td><td>US3</td></tr>
+            <tr><td>FR9</td><td>手动编辑：编辑模式下增删景点、调整顺序、修改时间/地址/时长/描述，支持取消回滚</td><td><span class="chip chip-p1">P1</span></td><td>US3</td></tr>
+            <tr><td>FR10</td><td>可视化呈现：高德动态地图（以首个有坐标景点为中心）、时间线视图（含景点间交通连接线）、天气卡片、预算明细</td><td><span class="chip chip-p1">P1</span></td><td>US1</td></tr>
+            <tr><td>FR11</td><td>导出：行程导出为图片（PNG）与 PDF 双格式</td><td><span class="chip chip-p1">P1</span></td><td>US5</td></tr>
+            <tr><td>FR12</td><td>工具管理：静态工具/Agent 清单 API（不触发真实调用）</td><td><span class="chip chip-p2">P2</span></td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>2.3 非功能需求清单（NFR）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>编号</th><th>类别</th><th>需求</th><th>量化指标</th></tr></thead>
+          <tbody>
+            <tr><td>NFR1</td><td>性能</td><td>查询阶段耗时</td><td>≤ 15s（4 路并行完成）</td></tr>
+            <tr><td>NFR1</td><td>性能</td><td>规划阶段耗时</td><td>≤ 120s（输出约 3000 token）</td></tr>
+            <tr><td>NFR1</td><td>性能</td><td>微调建议/应用耗时</td><td>≤ 30s / ≤ 90s</td></tr>
+            <tr><td>NFR1</td><td>性能</td><td>工具初始化耗时</td><td>≤ 0.5s</td></tr>
+            <tr><td>NFR2</td><td>可靠性</td><td>规划成功率</td><td>≥ 95%（含解析重试）</td></tr>
+            <tr><td>NFR2</td><td>可靠性</td><td>静默失败场景</td><td>0（所有失败必须显式可见）</td></tr>
+            <tr><td>NFR2</td><td>可靠性</td><td>工具可用性</td><td>7/7（7 个子工具全部可用）</td></tr>
+            <tr><td>NFR3</td><td>数据质量</td><td>数据真实性</td><td>100% 来自外部 API 真实数据，不可用时显式标注</td></tr>
+            <tr><td>NFR4</td><td>安全性</td><td>密钥管理</td><td>密钥只存在于后端 <code>.env</code>，不入库、不进前端、不打印</td></tr>
+            <tr><td>NFR4</td><td>安全性</td><td>输入校验</td><td>所有请求体经 Pydantic 校验（天数 1-30、日期格式等）</td></tr>
+            <tr><td>NFR5</td><td>可维护性</td><td>配置外置</td><td>新增部署环境仅需修改 <code>.env</code>，不改代码</td></tr>
+            <tr><td>NFR6</td><td>可扩展性</td><td>工具扩展</td><td>新增工具在单文件中以装饰器注册，其余层无感</td></tr>
+            <tr><td>NFR7</td><td>可测试性</td><td>分层可验证</td><td>工具层→Agent 层→服务层→API 层→前端层均可独立测试</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>2.4 验收准则（对应 NFR 的度量口径）</h3>
+      <ul>
+        <li><strong>查询阶段 ≤15s</strong>：以 4 个搜索 Agent 全部返回为准（日志时间戳测量，缓存命中除外）。</li>
+        <li><strong>规划成功率 ≥95%</strong>：连续 20 次端到端规划，成功 ≥19 次（成功 = 返回通过 Schema 校验的完整 TripPlan）。</li>
+        <li><strong>静默失败 = 0</strong>：3 类故障注入场景（LLM 返回非 JSON / 高德超时 / 单 Agent 失败）均须产生显式错误提示或降级标注，不得返回看似正常的假数据。</li>
+      </ul>
+    </section>
+
+    <section id="ch3">
+      <div class="ch-head"><span class="ch-num">03</span><h2>总体方案设计</h2></div>
+      <h3>3.1 系统上下文</h3>
+      <figure class="diagram-card">
+        <pre class="mermaid">%%{init: {'theme':'base','themeVariables': {'background':'#ffffff','fontFamily':'PingFang SC, Microsoft YaHei, sans-serif','fontSize':'13px','primaryColor':'#eef0fd','primaryTextColor':'#1d2437','primaryBorderColor':'#667eea','lineColor':'#667eea','secondaryColor':'#f3f5fa','tertiaryColor':'#eceff7','clusterBkg':'#f3f5fa','clusterBorder':'#c9d2e8','fontColor':'#1d2437','edgeLabelBackground':'#ffffff','actorBkg':'#eef0fd','actorBorder':'#667eea','actorTextColor':'#1d2437','signalColor':'#4a5468','signalTextColor':'#1d2437','labelBoxBkgColor':'#f3f5fa','labelBoxBorderColor':'#667eea','labelTextColor':'#1d2437','activationBkgColor':'#eef0fd','activationBorderColor':'#667eea','noteBkgColor':'#fbf3e0','noteBorderColor':'#a9741d'}}}%%
+flowchart LR
+    U[用户 Web 浏览器] -->|HTTP/SSE| F[前端 Vue3 + Ant Design Vue]
+    F -->|REST + SSE| B[后端 FastAPI 服务]
+    B --> D[DeepSeek-V4 大模型 API]
+    B --> A[高德开放平台 API]
+    B --> Un[Unsplash 图片 API]
+    B --> FS[(本地文件存储<br/>data/plans · data/profiles)]
+    F -->|JS API 2.0| AMap[高德地图 JS SDK]</pre>
+        <figcaption>图 3-1 · 系统上下文图</figcaption>
+      </figure>
+      <h3>3.2 逻辑架构（五层）</h3>
+      <figure class="diagram-card">
+        <pre class="mermaid">%%{init: {'theme':'base','themeVariables': {'background':'#ffffff','fontFamily':'PingFang SC, Microsoft YaHei, sans-serif','fontSize':'12.5px','primaryColor':'#eef0fd','primaryTextColor':'#1d2437','primaryBorderColor':'#667eea','lineColor':'#667eea','secondaryColor':'#f3f5fa','tertiaryColor':'#eceff7','clusterBkg':'#f3f5fa','clusterBorder':'#c9d2e8','fontColor':'#1d2437','edgeLabelBackground':'#ffffff'}}}%%
+flowchart TB
+    subgraph FE[前端层]
+        Home[Home.vue 需求采集 · SSE 进度 · 历史卡片]
+        Result[Result.vue 地图 · 时间线 · 微调聊天 · 编辑 · 导出]
+        API[services/api.ts 统一请求封装]
+    end
+    subgraph APIL[API 层]
+        Trip[路由 /api/trip/* 7 端点]
+        Usr[路由 /api/user/* 2 端点]
+        Tls[路由 /api/tools/* 6 静态端点]
+        Err[错误分层 503 / 502 / 500]
+    end
+    subgraph SVC[服务层]
+        Planner[MultiAgentTripPlanner<br/>并行调度 · 缓存 · 重试 · 清洗 · 相似参考]
+        Refine[RefinementAgent 两阶段微调]
+        Store[PlanStore · ProfileManager 持久化与画像]
+    end
+    subgraph AGT[Agent 层]
+        A1[attraction_agent 景点]
+        A2[weather_agent 天气]
+        A3[hotel_agent 酒店]
+        A4[restaurant_agent 餐厅]
+        P1[planner_agent 规划<br/>纯 LLM 无工具]
+    end
+    subgraph TOOL[工具层]
+        T[AmapDirectTool<br/>expandable → 7 个子工具]
+        U2[UnsplashService]
+    end
+    FE --> APIL --> SVC --> AGT --> TOOL
+    TOOL -.->|httpx 直连| EXT[(高德 / Unsplash)]
+    AGT -.->|OpenAI 兼容接口| LLM[(DeepSeek-V4)]
+    SVC --> FS[(JSON 文件存储)]</pre>
+        <figcaption>图 3-2 · 五层逻辑架构</figcaption>
+      </figure>
+      <h3>3.3 端到端时序</h3>
+      <h4>3.3.1 计划生成链路（SSE 流式）</h4>
+      <figure class="diagram-card">
+        <pre class="mermaid">%%{init: {'theme':'base','themeVariables': {'background':'#ffffff','fontFamily':'PingFang SC, Microsoft YaHei, sans-serif','fontSize':'12.5px','primaryColor':'#eef0fd','primaryTextColor':'#1d2437','primaryBorderColor':'#667eea','lineColor':'#667eea','secondaryColor':'#f3f5fa','tertiaryColor':'#eceff7','clusterBkg':'#f3f5fa','clusterBorder':'#c9d2e8','fontColor':'#1d2437','edgeLabelBackground':'#ffffff','actorBkg':'#eef0fd','actorBorder':'#667eea','actorTextColor':'#1d2437','signalColor':'#4a5468','signalTextColor':'#1d2437','labelBoxBkgColor':'#f3f5fa','labelBoxBorderColor':'#667eea','labelTextColor':'#1d2437','activationBkgColor':'#eef0fd','activationBorderColor':'#667eea','noteBkgColor':'#fbf3e0','noteBorderColor':'#a9741d'}}}%%
+sequenceDiagram
+    participant U as 浏览器
+    participant F as 前端
+    participant A as API 层
+    participant P as 规划服务
+    participant Ag as 4 搜索 Agent
+    participant T as 高德 API
+    participant Pl as 规划 Agent
+    participant S as PlanStore
+
+    U->>F: 提交旅行需求
+    F->>A: POST /api/trip/plan/stream (SSE)
+    A->>F: event: query_start
+    A->>P: 读画像 → 并行调度
+    par 4 路并行（asyncio.gather + to_thread）
+        P->>Ag: 景点查询（缓存 → 重试 → 执行）
+        Ag->>T: maps_text_search
+        T-->>Ag: POI 数据
+        P->>Ag: 天气查询
+        Ag->>T: maps_weather
+        T-->>Ag: 天气预报
+        P->>Ag: 酒店查询
+        Ag->>T: maps_text_search
+        T-->>Ag: 酒店数据
+        P->>Ag: 餐厅查询
+        Ag->>T: maps_text_search
+        T-->>Ag: 餐厅数据
+    end
+    A->>F: event: query_complete
+    A->>F: event: planning_start
+    P->>P: 数据清洗 → 相似历史计划检索 → 组装规划提示词
+    P->>Pl: 规划（含重试，超时 120s）
+    Pl-->>P: 行程 JSON
+    P->>P: JSON 提取 + Schema 校验
+    P->>S: 持久化 → 返回 plan_id
+    A->>F: event: plan_complete
+    F->>U: 渲染结果页</pre>
+        <figcaption>图 3-3 · 计划生成链路时序</figcaption>
+      </figure>
+      <h4>3.3.2 两阶段微调链路</h4>
+      <figure class="diagram-card">
+        <pre class="mermaid">%%{init: {'theme':'base','themeVariables': {'background':'#ffffff','fontFamily':'PingFang SC, Microsoft YaHei, sans-serif','fontSize':'12.5px','primaryColor':'#eef0fd','primaryTextColor':'#1d2437','primaryBorderColor':'#667eea','lineColor':'#667eea','secondaryColor':'#f3f5fa','tertiaryColor':'#eceff7','clusterBkg':'#f3f5fa','clusterBorder':'#c9d2e8','fontColor':'#1d2437','edgeLabelBackground':'#ffffff','actorBkg':'#eef0fd','actorBorder':'#667eea','actorTextColor':'#1d2437','signalColor':'#4a5468','signalTextColor':'#1d2437','labelBoxBkgColor':'#f3f5fa','labelBoxBorderColor':'#667eea','labelTextColor':'#1d2437','activationBkgColor':'#eef0fd','activationBorderColor':'#667eea','noteBkgColor':'#fbf3e0','noteBorderColor':'#a9741d'}}}%%
+sequenceDiagram
+    participant U as 浏览器
+    participant A as API 层
+    participant R as RefinementAgent
+    participant L as 大模型
+    participant T as 高德 API
+    participant S as PlanStore
+
+    U->>A: POST /api/trip/plan/{id}/refine（自然语言请求）
+    A->>R: advise()（纯 LLM，无工具，30s）
+    R->>L: 计划摘要 + 修改请求
+    L-->>R: 建议文本（≤300 字，末尾征询确认）
+    R-->>U: reply + changes（不修改计划）
+    U->>A: POST /api/trip/plan/{id}/apply（用户确认）
+    A->>R: refine()（FunctionCallAgent + 7 工具，90s）
+    R->>T: 搜索替代方案（酒店/餐厅/景点）
+    T-->>R: 候选数据
+    R->>L: 全量计划 JSON + 精准修改约束
+    L-->>R: {reply, changes, modified_plan}
+    R->>S: 校验后保存为新 plan_id
+    R-->>U: 修改后的完整计划</pre>
+        <figcaption>图 3-4 · 两阶段微调链路时序</figcaption>
+      </figure>
+      <h3>3.4 关键设计决策与权衡（ADR）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>决策点</th><th>备选方案</th><th>决策</th><th>理由</th></tr></thead>
+          <tbody>
+            <tr><td>ADR1</td><td>工具调用协议</td><td>A. SimpleAgent 文本约定 + 正则解析；B. FunctionCallAgent 原生 function calling</td><td><strong>B</strong></td><td>方案 A 依赖模型输出格式巧合，工具调用不可靠；B 由模型服务端保证调用协议，可靠性从"碰运气"提升为"确定性"。</td></tr>
+            <tr><td>ADR2</td><td>高德集成方式</td><td>A. MCP 子进程协议；B. 直连 HTTP 封装</td><td><strong>B</strong></td><td>方案 A 引入 uvx 外部依赖，且存在依赖缺失时静默展开为 0 个工具的故障模式（见 06.1 风险识别）；B 零外部依赖、启动开销从秒级降至 0.1s 量级、故障模式显式可控。</td></tr>
+            <tr><td>ADR3</td><td>搜索执行方式</td><td>A. 串行逐 Agent；B. asyncio.gather + to_thread 真并行</td><td><strong>B</strong></td><td>4 路搜索无数据依赖，串行是纯浪费；B 将查询阶段从约 60s 压缩至最慢单路耗时（约 15s）。</td></tr>
+            <tr><td>ADR4</td><td>失败处理策略</td><td>A. 静默返回兜底假数据；B. 显式分层异常</td><td><strong>B</strong></td><td>假数据破坏用户信任根基；B 以 503/502/500 分层表达"服务不可用/数据错误/内部错误"，前端针对性提示。</td></tr>
+            <tr><td>ADR5</td><td>进度反馈</td><td>A. 前端定时器假进度条；B. SSE 后端真实事件</td><td><strong>B</strong></td><td>假进度条与真实状态脱节，进度先到 90% 再失败是信任事故；B 的进度永远与后端阶段一致。</td></tr>
+            <tr><td>ADR6</td><td>数据清洗</td><td>A. 原始数据直接拼提示词；B. 清洗层（JSON 提取→结构化 top10→降级截断）</td><td><strong>B</strong></td><td>原始数据冗长且结构混乱，挤占上下文并降低规划质量；B 保证"垃圾不进入提示词"。</td></tr>
+            <tr><td>ADR7</td><td>历史计划复用</td><td>A. 直接复用旧计划；B. 相似度匹配注入结构参考 + 强制使用新数据</td><td><strong>B</strong></td><td>直接复用会输出过期数据；B 以打分（同城+50/偏好重叠+15/天数相近+10，阈值≥50，跨城市直接跳过）控制参考质量，并注入防照搬约束。</td></tr>
+            <tr><td>ADR8</td><td>微调交互</td><td>A. 一次性完整修改；B. 两阶段：30s 快速建议 → 用户确认 → 90s 工具执行</td><td><strong>B</strong></td><td>完整修改 90s 的"未知等待"体验差且不可逆；B 把等待拆为"短感知+用户控制权"，且建议阶段纯 LLM 无工具开销。</td></tr>
+            <tr><td>ADR9</td><td>画像与个性化</td><td>A. 无状态；B. 画像持久化 + 规划期注入</td><td><strong>B</strong></td><td>B 以极低成本（JSON 文件 + 提示词注入）获得"记得用户"的能力，复用成本低于重生成。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="ch4">
+      <div class="ch-head"><span class="ch-num">04</span><h2>接口设计</h2></div>
+      <h3>4.1 REST API（核心业务 9 端点）</h3>
+      <p style="font-size:13px;color:var(--ink-3)">路由实现：<code>helloagents-trip-planner/backend/app/api/routes/trip.py</code>、<code>user.py</code></p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>方法</th><th>路径</th><th>请求体/参数</th><th>响应</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>POST</td><td><code>/api/trip/plan</code></td><td>TripRequest</td><td>TripPlanResponse</td><td>同步生成计划（全量等待）</td></tr>
+            <tr><td>2</td><td>POST</td><td><code>/api/trip/plan/stream</code></td><td>TripRequest</td><td>SSE 事件流</td><td>流式生成计划（推荐）</td></tr>
+            <tr><td>3</td><td>GET</td><td><code>/api/trip/plans</code></td><td>query: user_id</td><td>PlanHistoryResponse</td><td>历史计划摘要列表（时间倒序，上限 20）</td></tr>
+            <tr><td>4</td><td>GET</td><td><code>/api/trip/plan/{plan_id}</code></td><td>path: plan_id</td><td>{success, plan_id, created_at, plan}</td><td>计划详情</td></tr>
+            <tr><td>5</td><td>POST</td><td><code>/api/trip/plan/{plan_id}/refine</code></td><td>RefineRequest</td><td>RefineResponse</td><td>微调建议（不修改计划，modified_plan 恒为 null）</td></tr>
+            <tr><td>6</td><td>POST</td><td><code>/api/trip/plan/{plan_id}/apply</code></td><td>RefineRequest</td><td>RefineResponse</td><td>应用修改（工具调用 + 另存新 plan_id）</td></tr>
+            <tr><td>7</td><td>GET</td><td><code>/api/trip/health</code></td><td>—</td><td>服务健康状态</td><td>5 个 Agent 状态 + 工具数</td></tr>
+            <tr><td>8</td><td>GET</td><td><code>/api/user/profile/{user_id}</code></td><td>path: user_id</td><td>UserProfile</td><td>读取偏好画像</td></tr>
+            <tr><td>9</td><td>PUT</td><td><code>/api/user/profile/{user_id}</code></td><td>UserProfile 部分字段</td><td>UserProfile</td><td>更新偏好画像</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>辅助接口</strong>：<code>/api/tools/*</code> 6 个静态端点（<code>/</code>、<code>/amap</code>、<code>/agents</code>、<code>/data-flow</code>、<code>/readme</code>、<code>/simple</code>），返回工具/Agent 清单等静态信息，不触发任何真实调用（实现于 <code>api/routes/tools.py</code> + <code>tools/registry.py</code>）。</p>
+      <div class="callout"><span class="c-title">遗留声明</span><code>api/routes/map.py</code> 及 <code>services/amap_service.py</code> 为 MCP 集成方案的废弃代码，无路由引用，不参与本特性交付；<code>api/routes/poi.py</code> 的 <code>/api/poi/photo</code> 图片端点仍被前端景点卡片使用（Unsplash 数据源）。</div>
+      <h3>4.2 错误码规范（分层语义）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>状态码</th><th>触发类型</th><th>语义</th><th>前端呈现</th></tr></thead>
+          <tbody>
+            <tr><td>503</td><td>RuntimeError</td><td>上游服务不可用（超时/网络/依赖故障）</td><td>"服务暂时不可用，请稍后重试"</td></tr>
+            <tr><td>502</td><td>ValueError</td><td>数据错误（LLM 输出解析失败/格式非法）</td><td>"生成结果校验失败，请重试"</td></tr>
+            <tr><td>500</td><td>Exception</td><td>未预期内部错误</td><td>"服务器内部错误"</td></tr>
+            <tr><td>404</td><td>—</td><td>plan_id 不存在</td><td>"计划不存在"</td></tr>
+            <tr><td>422</td><td>Pydantic 校验失败</td><td>请求体非法（天数越界/日期格式错误）</td><td>字段级提示</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>设计约束：任何失败不得静默吞掉后返回假数据</strong>；错误信息向上逐层传递，最终由前端显式呈现。</p>
+      <h3>4.3 SSE 事件协议</h3>
+      <p>媒体类型 <code>text/event-stream</code>，事件格式 <code>event: 类型\n data: JSON\n\n</code>。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>事件</th><th>触发时机</th><th>data 载荷</th><th>前端状态</th></tr></thead>
+          <tbody>
+            <tr><td><code>query_start</code></td><td>4 路搜索开始</td><td>{message, timestamp}</td><td>第 1 步（进度 10%）</td></tr>
+            <tr><td><code>query_complete</code></td><td>4 路搜索全部完成</td><td>{message, timestamp}</td><td>第 2 步（进度 40%）</td></tr>
+            <tr><td><code>planning_start</code></td><td>规划 Agent 开始</td><td>{message, timestamp}</td><td>第 2 步持续</td></tr>
+            <tr><td><code>plan_complete</code></td><td>计划校验并落盘</td><td>{message, plan_id, timestamp}</td><td>第 3 步完成（100%）</td></tr>
+            <tr><td><code>error</code></td><td>任一阶段失败</td><td>{message}</td><td>错误提示 + 停止</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>前端消费方式：<code>fetch</code> + <code>ReadableStream</code> + <code>TextDecoder</code> 逐块解析（SSE 为 POST 请求，不能用 EventSource，实现于 <code>frontend/src/services/api.ts</code>）。</p>
+      <h3>4.4 内部组件接口</h3>
+      <p><strong>工具层 AmapDirectTool</strong>（<code>app/tools/amap_direct.py</code>，expandable=True 展开为 7 个子工具）：</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>子工具</th><th>功能</th><th>主要返回</th></tr></thead>
+          <tbody>
+            <tr><td><code>maps_text_search</code></td><td>POI 关键词搜索（景点/酒店/餐厅）</td><td>名称/地址/坐标/评分/电话/价格</td></tr>
+            <tr><td><code>maps_weather</code></td><td>天气预报</td><td>逐日白天/夜间天气/温度/风向/风力</td></tr>
+            <tr><td><code>maps_geo</code></td><td>地理编码</td><td>地址→坐标</td></tr>
+            <tr><td><code>maps_search_detail</code></td><td>POI 详情</td><td>简介/图片/评分</td></tr>
+            <tr><td><code>maps_direction_walking_by_address</code></td><td>步行路径规划</td><td>距离/时长/路线</td></tr>
+            <tr><td><code>maps_direction_driving_by_address</code></td><td>驾车路径规划</td><td>距离/时长/路线</td></tr>
+            <tr><td><code>maps_direction_transit_integrated_by_address</code></td><td>公交地铁路线规划</td><td>换乘方案/时长</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>契约</strong>：HTTP 超时 15s；高德返回 <code>status != "1"</code> 时返回结构化错误文本（不抛未解释异常）；POI 列表统一裁剪为 top 10 简化字段。</p>
+      <p><strong>PlanStore</strong>（<code>app/memory/plan_store.py</code>）：<code>save(request, plan, user_id) → plan_id</code>、<code>get(plan_id) → PlanRecord</code>、<code>list_by_user(user_id) → [PlanRecord]</code>、<code>find_similar(city, preferences, days) → PlanRecord | None</code>。</p>
+      <p><strong>ProfileManager</strong>（<code>app/memory/profile_manager.py</code>）：<code>get_profile(user_id) → UserProfile</code>、<code>update_preferences(user_id, **updates)</code>；规划前调用 <code>to_injection_text()</code> 生成提示词注入段。</p>
+      <h3>4.5 第三方接口</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>依赖方</th><th>用途</th><th>协议</th><th>超时/重试</th><th>降级策略</th></tr></thead>
+          <tbody>
+            <tr><td>高德开放平台</td><td>7 个子工具数据源</td><td>HTTPS REST</td><td>15s，重试 3 次</td><td>返回结构化错误 → 该路降级标注"暂时无法获取"</td></tr>
+            <tr><td>DeepSeek-V4</td><td>5 个 Agent 的推理</td><td>OpenAI 兼容 <code>/chat/completions</code></td><td>分级 45/120/30/90s</td><td>重试 3 次 → 分层异常</td></tr>
+            <tr><td>Unsplash</td><td>景点图片</td><td>HTTPS REST</td><td>10s</td><td>前端 SVG 渐变占位图</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="ch5">
+      <div class="ch-head"><span class="ch-num">05</span><h2>数据结构设计</h2></div>
+      <h3>5.1 核心模型（Pydantic，<code>app/models/schemas.py</code>）</h3>
+      <p><strong>TripRequest（请求）</strong>：<code>city</code>(str) · <code>start_date</code>/<code>end_date</code>(date) · <code>travel_days</code>(int, 1-30) · <code>transportation</code>(str) · <code>accommodation</code>(str) · <code>preferences</code>(list[str]) · <code>free_text_input</code>(str) · <code>user_id</code>(str)</p>
+      <p><strong>TripPlan（计划根对象）</strong>：<code>city</code> · <code>start_date</code> · <code>end_date</code> · <code>days</code>(list[DayPlan]) · <code>weather_info</code>(list[WeatherInfo]) · <code>overall_suggestions</code>(str) · <code>budget</code>(Budget)</p>
+      <p><strong>DayPlan（单日）</strong>：<code>day_index</code>(int) · <code>date</code> · <code>description</code> · <code>transportation</code> · <code>accommodation</code> · <code>hotel</code>(Hotel) · <code>attractions</code>(list[Attraction]) · <code>meals</code>(list[Meal])</p>
+      <p><strong>Attraction（景点）</strong>：<code>name</code> · <code>address</code> · <code>location</code>{longitude, latitude} · <code>rating</code> · <code>visit_duration</code>(分钟) · <code>time_start</code>(HH:MM) · <code>description</code> · <code>photos</code>(list[str]) · <code>poi_id</code> · <code>ticket_price</code></p>
+      <p><strong>Meal（餐饮）</strong>：<code>type</code>(breakfast/lunch/dinner/snack) · <code>name</code> · <code>address</code> · <code>time_start</code> · <code>estimated_cost</code> · <code>rating</code> · <code>description</code></p>
+      <p><strong>Hotel（酒店）</strong>：<code>name</code> · <code>address</code> · <code>type</code> · <code>price_range</code> · <code>rating</code> · <code>estimated_cost</code></p>
+      <p><strong>WeatherInfo（天气）</strong>：<code>date</code> · <code>day_weather</code> · <code>day_temp</code> · <code>night_weather</code> · <code>night_temp</code> · <code>wind_direction</code> · <code>wind_power</code>（温度字段带校验器自动剥离"°C"）</p>
+      <p><strong>Budget（预算）</strong>：<code>total_attractions</code> · <code>total_hotels</code> · <code>total_meals</code> · <code>total_transportation</code> · <code>total</code></p>
+      <h3>5.2 持久化模型</h3>
+      <p><strong>PlanRecord</strong>（<code>app/memory/plan_store.py</code>）：<code>plan_id</code>(uuid4 hex 前 8 位，形如 plan_xxxxxxxx) · <code>user_id</code> · <code>created_at</code> · <code>city</code> · <code>travel_days</code> · <code>preferences</code> · <code>request</code>(原始 TripRequest dict) · <code>plan</code>(TripPlan dict)</p>
+      <p><strong>UserProfile</strong>（<code>app/memory/user_profile.py</code>）：<code>dietary_restrictions</code> · <code>travel_style</code> · <code>budget_level</code> · <code>visited_cities</code>(list) · <code>preferred_activities</code>(list) · <code>accommodation_preference</code></p>
+      <h3>5.3 存储设计</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>项目</th><th>设计</th></tr></thead>
+          <tbody>
+            <tr><td>介质</td><td>本地 JSON 文件（UTF-8，缩进 2，可读可检）</td></tr>
+            <tr><td>目录</td><td><code>data/plans/plan_{plan_id}.json</code>；<code>data/profiles/{user_id}.json</code></td></tr>
+            <tr><td>缓存</td><td>进程内内存字典（读命中免磁盘 IO）；计划缓存 TTL 600s</td></tr>
+            <tr><td>写路径</td><td>写文件 + 更新内存缓存双写；微调后以新 plan_id 另存（原计划不可变）</td></tr>
+            <tr><td>读路径</td><td>缓存优先 → 文件读取</td></tr>
+            <tr><td>演进</td><td>数据访问收敛于 PlanStore/ProfileManager 两个类，后续迁移 SQLite/Redis 仅改这两个实现</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>5.4 前后端类型对齐</h3>
+      <p>前端 <code>frontend/src/types/index.ts</code> 的 TS 接口与 Pydantic 模型一一对应（含 <code>time_start</code>/<code>photos</code>/<code>poi_id</code>/<code>image_url</code> 等字段），后端 Schema 变更必须同步修改该文件并保持字段名严格一致（snake_case）。</p>
+    </section>
+
+    <section id="ch6">
+      <div class="ch-head"><span class="ch-num">06</span><h2>DFX 设计</h2></div>
+      <h3>6.1 可靠性设计</h3>
+      <p><strong>风险识别 → 设计约束</strong>（每条约束均为对特定故障模式的前置设计）：</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>风险识别（故障模式）</th><th>设计约束</th></tr></thead>
+          <tbody>
+            <tr><td>文本约定式工具调用，模型输出格式漂移即失效</td><td>工具调用一律走 FunctionCallAgent 原生协议，禁止文本拼接式调用</td></tr>
+            <tr><td>子进程方式集成工具，依赖缺失时静默展开为 0 个工具</td><td>工具集成采用直连 HTTP，禁止子进程方案（ADR2）</td></tr>
+            <tr><td>同步阻塞调用，单路慢则全体慢</td><td>搜索一律 asyncio.gather 并行，单路失败不阻塞其余路</td></tr>
+            <tr><td>失败静默返回兜底数据，用户对故障无感知</td><td>分层异常（503/502/500）+ 前端显式提示，禁止假数据兜底</td></tr>
+            <tr><td>LLM 输出格式不稳定</td><td>三重防御：严格 JSON 格式约束提示词 → 多模式提取（<code>```json</code>/裸 <code>{}</code>）→ Pydantic 校验失败则整体重试（上限 3 次）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>容错参数总表</strong>（<code>app/agents/trip_planner_agent.py</code>、<code>refinement_agent.py</code>）：</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>参数</th><th>值</th><th>作用域</th></tr></thead>
+          <tbody>
+            <tr><td>QUERY_TIMEOUT</td><td>45s</td><td>单次搜索 Agent 执行</td></tr>
+            <tr><td>PLANNER_TIMEOUT</td><td>120s</td><td>规划 Agent 执行</td></tr>
+            <tr><td>ADVISE_TIMEOUT</td><td>30s</td><td>微调建议</td></tr>
+            <tr><td>REFINE_TIMEOUT</td><td>90s</td><td>微调应用</td></tr>
+            <tr><td>MAX_RETRIES</td><td>3</td><td>搜索/规划调用重试</td></tr>
+            <tr><td>MAX_TOOL_ITERATIONS</td><td>5</td><td>微调 Agent 工具迭代上限</td></tr>
+            <tr><td>HTTP_TIMEOUT</td><td>15s</td><td>高德请求</td></tr>
+            <tr><td>CACHE_TTL</td><td>600s</td><td>搜索结果缓存</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>6.2 可维护性设计</h3>
+      <ul>
+        <li><strong>静态工具注册表</strong>（<code>tools/registry.py</code> + <code>amap_tools.py</code>/<code>llm_tools.py</code>）：工具清单查询接口返回静态定义，不实例化 Agent、不触发外部调用——保证"看清单"操作零副作用、零耗时。</li>
+        <li><strong>配置外置</strong>：全部密钥/模型名/超时/端口经 <code>config.py</code> 从 <code>.env</code> 加载（支持加载父目录 HelloAgents 公共配置），代码零硬编码。</li>
+        <li><strong>模块边界</strong>：工具层（无框架感知）→ Agent 层（无 HTTP 感知）→ 服务层（无路由感知）→ API 层（无业务逻辑）→ 前端层；跨层仅通过 Pydantic/TS 类型通信。</li>
+        <li><strong>启动自检</strong>：服务启动时校验配置完整性并打印关键配置（密钥脱敏）。</li>
+      </ul>
+      <h3>6.3 安全性设计</h3>
+      <ul>
+        <li>API Key 仅存后端 <code>.env</code>，不入库、不进前端、日志脱敏；前端地图使用独立的 Web 端 JS Key。</li>
+        <li>Pydantic 输入校验覆盖所有请求体：天数 1-30、日期格式、枚举餐次等；非法输入由框架统一返回 422。</li>
+        <li>CORS 白名单仅放行前端开发源（localhost:5173/3000）。</li>
+        <li>已知限制：本期无鉴权（见第 09 章），user_id 由前端生成（<code>user_ + 时间戳36进制 + 随机数</code>，localStorage 持久化）。</li>
+      </ul>
+      <h3>6.4 性能设计</h3>
+      <ul>
+        <li><strong>并行</strong>：4 路搜索并行（asyncio.gather + asyncio.to_thread 规避 Agent 同步阻塞）；单路失败不阻塞其余路。</li>
+        <li><strong>缓存</strong>：搜索结果 600s TTL 内存缓存，热点城市重复查询直接命中。</li>
+        <li><strong>数据裁剪</strong>：清洗层将 POI 统一裁剪为 top 10 简化字段，控制提示词体积；微调建议只传计划摘要而非全量 JSON。</li>
+        <li><strong>时间预算</strong>：查询 ≤15s / 规划 ≤120s / 建议 ≤30s / 应用 ≤90s，各阶段独立超时，超时即显式失败而非无限等待。</li>
+        <li>已知瓶颈：规划阶段耗时由输出 token 解码主导（约 3000 token），已通过提示词精简 + 预算字段聚合控制输出规模，后续可评估流式输出规划结果（见 09.1 R7）。</li>
+      </ul>
+      <h3>6.5 易用性设计</h3>
+      <ul>
+        <li><strong>真实进度</strong>：SSE 4 事件驱动三步进度指示（10%→40%→100%）+ 脉冲动画，进度与后端阶段强一致。</li>
+        <li><strong>用户控制权</strong>：微调"建议 → 用户确认 → 应用"两阶段，确认前系统不产生任何修改；前端区分 pending（待用户操作）与 applying（执行中）状态，防止重复点击。</li>
+        <li><strong>编辑回滚</strong>：进入编辑模式时深拷贝快照，取消编辑可完整还原。</li>
+        <li><strong>降级可见</strong>：图片加载失败展示"图片加载失败"占位；地图加载失败仅记录日志不影响其他内容。</li>
+      </ul>
+      <h3>6.6 可扩展性设计</h3>
+      <ul>
+        <li>工具扩展：新增高德能力 = 在 <code>amap_direct.py</code> 增加一个 <code>@tool_action</code> 方法，Agent 与其余各层自动获得该能力。</li>
+        <li>Agent 扩展：新增搜索维度 = 在规划服务中增加一个 FunctionCallAgent + 一行 gather 配置。</li>
+        <li>模型演进：模型名/BaseURL 配置化，OpenAI 兼容协议使模型替换（如换其他厂商）无需改代码。</li>
+        <li>Schema 演进：Pydantic 向后兼容字段扩展 + 前端 TS 同步对齐流程（见 5.4）。</li>
+      </ul>
+      <h3>6.7 可测试性设计</h3>
+      <p>五层测试结构（每层可独立验证，层间以类型契约解耦）：</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>层</th><th>测试对象</th><th>依赖打桩</th></tr></thead>
+          <tbody>
+            <tr><td>L1 工具层</td><td>7 个子工具的请求/解析/错误处理</td><td>打桩 HTTP</td></tr>
+            <tr><td>L2 Agent 层</td><td>单个 Agent 查询返回、工具调用轨迹</td><td>打桩工具/模型</td></tr>
+            <tr><td>L3 服务层</td><td>plan_trip 全流程、清洗、相似度、缓存/重试</td><td>打桩 Agent</td></tr>
+            <tr><td>L4 API 层</td><td>9 端点、错误码分层、SSE 事件序列</td><td>打桩服务层</td></tr>
+            <tr><td>L5 前端层</td><td>表单校验、SSE 进度、地图、导出</td><td>打桩 API</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="ch7">
+      <div class="ch-head"><span class="ch-num">07</span><h2>测试策略</h2></div>
+      <h3>7.1 测试分层与用例设计</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>层</th><th>用例方向（示例）</th></tr></thead>
+          <tbody>
+            <tr><td>L1</td><td>7 个子工具正常返回/status!=1 错误分支/15s 超时分支/POI top10 裁剪正确性</td></tr>
+            <tr><td>L2</td><td>景点 Agent 返回可解析结构化列表；工具调用轨迹含预期工具名与参数</td></tr>
+            <tr><td>L3</td><td>清洗层对非法 JSON 的降级截断；相似度打分边界（49/50/51 分）；重试 3 次后仍失败的上抛</td></tr>
+            <tr><td>L4</td><td>各端点成功路径与 404/422/500/502/503 分支；SSE 事件顺序为 query_start→query_complete→planning_start→plan_complete</td></tr>
+            <tr><td>L5</td><td>天数自动计算、结束日期早于开始日期的拦截；plan_complete 后跳转结果页；导出文件可打开</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>7.2 AT 验收用例（节选，按用户故事）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>用例</th><th>前置条件</th><th>操作步骤</th><th>预期结果</th></tr></thead>
+          <tbody>
+            <tr><td>AT-US1-01 核心链路</td><td>服务启动，双 Key 有效</td><td>输入北京 2 日游（历史文化偏好），提交</td><td>SSE 依次推送 4 事件；结果页展示 2 天行程，含景点时间/三餐/酒店/天气/预算；全部数据可追溯至高德</td></tr>
+            <tr><td>AT-US1-02 非法输入</td><td>—</td><td>结束日期早于开始日期</td><td>前端拦截并提示，不发请求</td></tr>
+            <tr><td>AT-US2-01 真实进度</td><td>网络正常</td><td>提交生成，观察进度指示</td><td>3 步指示与后端 4 事件一一对应，无"进度跳跃到 90% 后失败"</td></tr>
+            <tr><td>AT-US3-01 精准微调</td><td>已有 plan_id</td><td>发送"第 1 天早餐店换成离酒店步行 10 分钟内的"→ 确认应用</td><td>修改后仅早餐项变化，其余天/景点/预算中未涉及部分逐字段不变；原计划 plan_id 仍可查</td></tr>
+            <tr><td>AT-US4-01 历史回溯</td><td>该 user_id 有 2 条以上计划</td><td>打开首页历史列表</td><td>按时间倒序展示，点击可打开完整详情</td></tr>
+            <tr><td>AT-US5-01 导出</td><td>有完整计划</td><td>分别导出图片与 PDF</td><td>文件生成成功且内容完整（含地图截图）</td></tr>
+            <tr><td>AT-US6-01 画像生效</td><td>已有画像（如饮食禁忌"不吃辣"）</td><td>再次生成计划</td><td>规划请求注入画像；餐食推荐避开辛辣项</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>7.3 性能指标测试</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>指标</th><th>目标</th><th>测量方法</th><th>口径说明</th></tr></thead>
+          <tbody>
+            <tr><td>查询阶段</td><td>≤15s</td><td>后端日志时间戳（query_start→query_complete）</td><td>缓存未命中；4 路并行取最慢一路</td></tr>
+            <tr><td>规划阶段</td><td>≤120s</td><td>planning_start→plan_complete</td><td>含重试；超时即判失败</td></tr>
+            <tr><td>工具初始化</td><td>≤0.5s</td><td>服务启动日志</td><td>5 个 Agent + 工具注册总耗时</td></tr>
+            <tr><td>规划成功率</td><td>≥95%</td><td>连续 20 次端到端</td><td>成功=通过 Schema 校验的完整 TripPlan</td></tr>
+            <tr><td>工具可用性</td><td>7/7</td><td>逐一调用 7 个子工具</td><td>均返回有效数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>7.4 故障注入用例</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>注入故障</th><th>预期行为</th></tr></thead>
+          <tbody>
+            <tr><td>F1</td><td>LLM 返回非 JSON 文本</td><td>提取失败 → 重试（≤3 次）→ 502 显式报错，不返回假数据</td></tr>
+            <tr><td>F2</td><td>高德接口超时/限流</td><td>该路返回结构化错误 → 结果中该维度标注"暂时无法获取"，其余维度正常</td></tr>
+            <tr><td>F3</td><td>单搜索 Agent 失败</td><td>其余 3 路不受阻塞，规划继续（数据可用性提示）</td></tr>
+            <tr><td>F4</td><td>无相似历史计划</td><td>正常规划，无参考注入，不报错</td></tr>
+            <tr><td>F5</td><td>图片源不可用</td><td>前端 SVG 占位图渲染，页面其余功能正常</td></tr>
+            <tr><td>F6</td><td>微调返回 modified_plan 非法</td><td>不覆盖原计划，原 plan_id 可查，返回显式提示</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>7.5 测试资产与补齐计划</h3>
+      <p>现有资产：<code>backend/debug_test.py</code>（分层逐步调试脚本：Agent 初始化→单 Agent→全流程）、<code>backend/test_e2e.py</code>（端到端脚本，覆盖结果摘要打印）。两者为真实 API 的手动脚本，无 mock。</p>
+      <p>补齐计划（列入 S2 Story 验收）：搭建 pytest + mock LLM 响应 + 打桩 HTTP 的自动化套件，将 7.1 中 L1-L4 用例脚本化；L5 前端用例以手动用例库 + 关键路径冒烟清单先行。</p>
+    </section>
+
+    <section id="ch8">
+      <div class="ch-head"><span class="ch-num">08</span><h2>Story 拆分与交付计划</h2></div>
+      <p style="font-size:13px;color:var(--ink-3)">拆分原则：INVEST（独立/可谈判/有价值/可估算/大小合适 3-5 天/可测试），每个 Story 交付时附 AT 用例评审。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Story</th><th>优先级</th><th>估算</th><th>内容概要</th><th>AT 验收标准</th><th>依赖</th></tr></thead>
+          <tbody>
+            <tr><td><strong>S1 核心生成链路</strong></td><td><span class="chip chip-p0">P0</span></td><td>4 天</td><td>5 Agent 并行架构、数据清洗层、结构化规划、Schema 校验与落盘</td><td>AT-US1-01 通过；7/7 工具调用成功</td><td>—</td></tr>
+            <tr><td><strong>S2 容错与稳定性</strong></td><td><span class="chip chip-p0">P0</span></td><td>3 天</td><td>重试/四级超时/分层异常/降级策略</td><td>7.4 全部故障注入用例通过；静默失败=0</td><td>S1</td></tr>
+            <tr><td><strong>S3 性能优化</strong></td><td><span class="chip chip-p0">P0</span></td><td>3 天</td><td>并行化、缓存、提示词精简、时间预算</td><td>查询 ≤15s；工具初始化 ≤0.5s</td><td>S1</td></tr>
+            <tr><td><strong>S4 计划微调与历史</strong></td><td><span class="chip chip-p1">P1</span></td><td>5 天</td><td>两阶段微调、PlanStore、画像</td><td>AT-US3-01 / AT-US4-01 / AT-US6-01 通过</td><td>S1、S2</td></tr>
+            <tr><td><strong>S5 前端体验</strong></td><td><span class="chip chip-p1">P1</span></td><td>5 天</td><td>SSE 真实进度、动态地图、时间线、导出、编辑模式</td><td>AT-US2-01 / AT-US5-01 通过；双格式导出可用</td><td>S3</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>8.1 迭代排期</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>迭代</th><th>Story 组合</th><th>里程碑（TR 点）</th><th>交付物</th></tr></thead>
+          <tbody>
+            <tr><td><strong>I1 基础可用</strong></td><td>S1 + S2</td><td>TR3 测试方案评审（针对 S1/S2）</td><td>可用的端到端链路 + 容错基线</td></tr>
+            <tr><td><strong>I2 性能与体验</strong></td><td>S3 + S5</td><td>性能指标评审</td><td>15s 查询 + 完整前端体验</td></tr>
+            <tr><td><strong>I3 增强能力</strong></td><td>S4</td><td>AT 用例评审</td><td>微调/历史/画像能力</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>每个 Story 交付流程：SE 串讲 → 开发 → Story 设计文档 → 反串讲确认 → 编码 → AT 用例执行 → 验收。</p>
+    </section>
+
+    <section id="ch9">
+      <div class="ch-head"><span class="ch-num">09</span><h2>风险与依赖</h2></div>
+      <h3>9.1 技术风险</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>风险</th><th>影响</th><th>等级</th><th>规避/缓解措施</th></tr></thead>
+          <tbody>
+            <tr><td>R1</td><td>LLM 输出格式漂移（非 JSON/缺字段）</td><td>规划失败</td><td><span class="chip chip-high">高</span></td><td>三重防御（严格格式约束 + 多模式提取 + Pydantic 校验）+ 重试 3 次（6.1）</td></tr>
+            <tr><td>R2</td><td>高德限流/欠费、DeepSeek 排队</td><td>查询/规划超时</td><td><span class="chip chip-high">高</span></td><td>15s 请求超时 + 600s 缓存 + 降级标注 + 分层异常显式报错</td></tr>
+            <tr><td>R3</td><td>Unsplash 图片源不可用</td><td>景点卡片无图</td><td><span class="chip chip-mid">中</span></td><td>前端 SVG 渐变占位图降级，不影响核心功能</td></tr>
+            <tr><td>R4</td><td>JSON 文件并发读写</td><td>数据覆盖/损坏</td><td><span class="chip chip-mid">中</span></td><td>写路径收敛于 PlanStore 单点；微调另存新 plan_id 不覆写；演进：SQLite 事务</td></tr>
+            <tr><td>R5</td><td>内存缓存随进程重启失效、多进程不共享</td><td>命中率下降</td><td><span class="chip chip-low">低</span></td><td>缓存仅作加速层（数据源仍为文件/API）；演进：Redis</td></tr>
+            <tr><td>R6</td><td>单点部署无鉴权</td><td>被滥用</td><td><span class="chip chip-mid">中</span></td><td>本期以 user_id 隔离数据；演进：接入鉴权与配额</td></tr>
+            <tr><td>R7</td><td>规划阶段解码耗时主导（60-120s 量级）</td><td>总耗时体验</td><td><span class="chip chip-mid">中</span></td><td>提示词精简 + 输出规模控制 + 两阶段微调隔离；演进：规划结果流式输出</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>9.2 外部依赖清单</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>依赖</th><th>用途</th><th>故障影响面</th><th>备用方案</th></tr></thead>
+          <tbody>
+            <tr><td>DeepSeek-V4 API（OpenAI 兼容）</td><td>全部 Agent 推理</td><td>整体不可用</td><td>协议兼容，可切换其他兼容服务（配置级）</td></tr>
+            <tr><td>高德开放平台 API</td><td>7 个子工具数据源</td><td>数据维度缺失</td><td>降级标注；缓存兜底</td></tr>
+            <tr><td>Unsplash API</td><td>景点图片</td><td>仅图片缺失</td><td>SVG 占位图</td></tr>
+            <tr><td>高德地图 JS SDK</td><td>前端地图渲染</td><td>地图区块不可用</td><td>其余内容不受影响</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>9.3 已知限制</h3>
+      <ol>
+        <li><strong>无鉴权</strong>：接口可被任意调用（本地/内网场景可接受，公网部署前必须补齐，见 R6）。</li>
+        <li><strong>单轮微调</strong>：微调结果不能再基于新结果连续追加修改（可对最新 plan_id 重新发起，但无对话历史上下文）。</li>
+        <li><strong>前端硬编码后端地址</strong>：<code>frontend/src/views/Result.vue</code> 中景点图片请求硬编码 <code>http://localhost:8000</code>（未走 Vite 代理），部署到其他环境需同步修改（列入技术债清理清单）。</li>
+        <li><strong>自动化测试覆盖不足</strong>：当前为手动脚本 + 用例库形态，pytest 自动化按 7.5 计划补齐。</li>
+        <li><strong>单机形态</strong>：存储与缓存均为单进程方案，横向扩展需先完成 SQLite/Redis 演进。</li>
+      </ol>
+    </section>
+
+    <section id="ch-a">
+      <div class="ch-head"><span class="ch-num">附</span><h2>代码结构对照</h2></div>
+      <pre class="filetree">helloagents-trip-planner/
+├── backend/
+│   ├── run.py                        <span class="cmt"># 启动入口（uvicorn，端口 8000）</span>
+│   ├── debug_test.py / test_e2e.py   <span class="cmt"># 分层调试 / 端到端脚本</span>
+│   └── app/
+│       ├── config.py                 <span class="cmt"># .env 配置加载</span>
+│       ├── agents/
+│       │   ├── trip_planner_agent.py <span class="cmt"># 核心：5 Agent + 并行/缓存/清洗/重试</span>
+│       │   └── refinement_agent.py   <span class="cmt"># 两阶段微调</span>
+│       ├── tools/
+│       │   ├── amap_direct.py        <span class="cmt"># 直连高德（7 子工具）</span>
+│       │   └── registry.py           <span class="cmt"># 静态注册表（工具清单 API）</span>
+│       ├── memory/
+│       │   ├── plan_store.py         <span class="cmt"># 计划持久化 + 相似度</span>
+│       │   └── profile_manager.py    <span class="cmt"># 用户画像</span>
+│       ├── models/schemas.py         <span class="cmt"># Pydantic 数据模型</span>
+│       ├── services/llm_service.py   <span class="cmt"># LLM 单例（OpenAI 兼容）</span>
+│       └── api/routes/               <span class="cmt"># trip.py / user.py / tools.py / poi.py</span>
+└── frontend/src/
+    ├── services/api.ts               <span class="cmt"># axios + SSE fetch 封装</span>
+    ├── types/index.ts                <span class="cmt"># TS 类型（与 Pydantic 对齐）</span>
+    └── views/Home.vue · Result.vue   <span class="cmt"># 表单+进度 / 结果展示+微调</span></pre>
+    </section>
+
+    <footer class="doc-footer">
+      <span>特性设计文档 · 智能旅行助手 Agent 系统</span>
+      <span><code>FEATURE-DESIGN-TA-001</code> · V1.0 · 2026-08-16 · 编制：研发工程师（特性 SE）</span>
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  var links = document.querySelectorAll('.toc a');
+  var sections = Array.prototype.map.call(links, function (a) {
+    return document.querySelector(a.getAttribute('href'));
+  });
+  if (!('IntersectionObserver' in window)) return;
+  var active = null;
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      var link = links[sections.indexOf(entry.target)];
+      if (!link) return;
+      if (active) active.classList.remove('active');
+      link.classList.add('active');
+      active = link;
+    });
+  }, { rootMargin: '-15% 0px -70% 0px' });
+  sections.forEach(function (s) { if (s) observer.observe(s); });
+})();
+</script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
+</script>
+</body>
+</html>
