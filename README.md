@@ -24,41 +24,6 @@
 - ✏️ **编辑与导出**：手动编辑（增删景点/调整顺序/回滚）+ 图片/PDF 双格式导出
 - 🛡️ **三层容错体系**：重试 3 次 + 四级超时（45/120/30/90s）+ 分层异常（503/502/500），失败永远显式可见
 
-## 🏗️ 系统架构
-
-```mermaid
-flowchart TB
-    subgraph FE[前端层 Vue3 + Ant Design Vue]
-        Home[Home.vue 需求采集 · SSE 进度 · 历史卡片]
-        Result[Result.vue 地图 · 时间线 · 微调聊天 · 编辑 · 导出]
-    end
-    subgraph APIL[API 层 FastAPI]
-        Trip[/api/trip/* 7 端点]
-        Usr[/api/user/* 2 端点]
-    end
-    subgraph SVC[服务层]
-        Planner[MultiAgentTripPlanner<br/>并行调度 · 缓存 · 重试 · 清洗 · 相似参考]
-        Refine[RefinementAgent 两阶段微调]
-        Store[PlanStore · ProfileManager]
-    end
-    subgraph AGT[Agent 层]
-        SEARCH[4 个搜索 Agent 并行<br/>景点 · 天气 · 酒店 · 餐厅]
-        P1[规划 Agent<br/>纯 LLM 无工具]
-    end
-    subgraph TOOL[工具层]
-        T[AmapDirectTool 7 个子工具]
-    end
-    FE -->|REST + SSE| APIL
-    APIL --> SVC
-    SVC -->|并行调度 asyncio.gather| SEARCH
-    SEARCH --> T
-    SEARCH -.->|原始结果| SVC
-    SVC -.->|清洗后数据| P1
-    P1 -.->|OpenAI 兼容| LLM[(DeepSeek-V4)]
-    T -.->|httpx 直连| EXT[(高德开放平台)]
-    SVC --> FS[(JSON 文件存储)]
-    FE -.->|JS API 2.0| AMapS[高德地图 JS SDK]
-```
 
 ## 🛠️ 技术栈
 
